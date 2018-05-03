@@ -20,18 +20,18 @@ class Dryann:
                        weighted volumes using the given model.
     '''
 
-    def train_model(bfile):
+    def train_model(self, bfile):
         '''
         '''
 
-    def load_model(mfile):
+    def load_model(self, mfile):
         '''
         '''
 
-    def save_model(mfile, model):
+    def save_model(self, mfile, model):
         '''
         '''
 
-    def correct_fwe(dwi, model, output_folder=None):
+    def correct_fwe(self, dwi, model, output_folder=None):
         '''
         '''
