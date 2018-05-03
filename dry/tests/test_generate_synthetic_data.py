@@ -6,30 +6,35 @@ Created on 3 May 2018
 '''
 
 import unittest
-import dry.utils as ut
+from dry.utils import generate_synthetic_data, DryException
 
 
 class TestGenerateSyntheticData(unittest.TestCase):
     def testEmptyBfile(self):
         try:
-            ut.generate_synthetic_data(None)
+            generate_synthetic_data(None)
             self.fail('generate_synthetic_data did not raise an excpetion')
-        except Exception:
+        except DryException:
             pass
+        except Exception:
+            self.fail('Wrong exception raised')
 
     def testWrongBfileContent(self):
-        bfile = 'test_ko.bvals'
+        bfile = 'dry/data/test_ko.bvals'
         try:
-            ut.generate_synthetic_data(bfile)
+            generate_synthetic_data(bfile)
             self.fail('generate_synthetic_data did not raise an excpetion')
-        except Exception:
+        except ValueError:
             pass
+        except Exception:
+            self.fail('Wrong exception raised')
 
     def testCorrectBfile(self):
-        bfile = 'test_ok.bvals'
-        sdata = ut.generate_synthetic_data(bfile)
-        self.assertTrue(sdata['S'].size is (31, 50000))
-        self.assertTrue(sdata['f'].size is (1, 50000))
+        bfile = 'dry/data/test_ok.bvals'
+        sdata = generate_synthetic_data(bfile)
+        self.assertIsNotNone(sdata)
+        self.assertTrue(sdata['S'].shape == (50000, 31))
+        self.assertTrue(sdata['f'].shape == (50000, 1))
 
 
 if __name__ == "__main__":

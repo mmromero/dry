@@ -9,7 +9,7 @@ High level class containing the necessary methods.
 '''
 
 
-class Dryann:
+class Dry:
     '''Dry free-water with artificial neural networks (ANN).
 
     Functions:
