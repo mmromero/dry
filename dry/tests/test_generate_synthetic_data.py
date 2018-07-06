@@ -20,7 +20,7 @@ class TestGenerateSyntheticData(unittest.TestCase):
             self.fail('Wrong exception raised')
 
     def testWrongBfileContent(self):
-        bfile = 'dry/data/test_ko.bvals'
+        bfile = 'dry/data/one-shell/test_ko.bvals'
         try:
             generate_synthetic_data(bfile)
             self.fail('generate_synthetic_data did not raise an excpetion')
@@ -30,12 +30,8 @@ class TestGenerateSyntheticData(unittest.TestCase):
             self.fail('Wrong exception raised')
 
     def testCorrectBfile(self):
-        bfile = 'dry/data/test_ok.bvals'
+        bfile = 'dry/data/one-shell/test_ok.bvals'
         sdata = generate_synthetic_data(bfile)
         self.assertIsNotNone(sdata)
         self.assertTrue(sdata['S'].shape == (50000, 31))
         self.assertTrue(sdata['f'].shape == (50000, 1))
-
-
-if __name__ == "__main__":
-    unittest.main()
