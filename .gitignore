@@ -3,6 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+model.png
+
+dry/data/test*
+dry/data/merged*
+
+*.DS_Store
+
 # C extensions
 *.so
 
