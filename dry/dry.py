@@ -92,7 +92,7 @@ class Dry:
             raise ValueError("Cannot save an empty model.")
         model.save(mfile)
 
-    def correct_fwe(self, dwis, model, bfile, output_folder=None):
+    def fwe(self, dwis, model, bfile, output_folder=None):
         '''Runs the diffusion data through the model to correct for free
         water contamination'''
 
@@ -110,23 +110,13 @@ class Dry:
         def _process_dwi(model, dwi, bvals, output_folder):
             print("Processing file {}".format(dwi))
             # Load and prepare data
-            dwinii = nb.load(dwi)
-            dwidata = dwinii.get_fdata()
-            dims = dwidata.shape
-            dwidata = np.reshape(dwidata, (np.prod(dims[0:3]), dims[3]))
-            maxdwi = np.amax(dwidata, axis=1)
-            dwidata = np.divide(dwidata.T, maxdwi.T).T
+            dwidata, maxdwi, dims, dwinii = self._prepare_dwi_data(dwi)
             # Predict tissue volume fraction and correct for free-water
             f = model.predict(dwidata)
             f[np.isnan(f)] = 0
             f[f < 0] = 0
             f[f > 1] = 1
-            Scsf = np.exp(-3e-3*bvals)
-            Scsf = np.multiply(1-f, Scsf)
-            St = np.divide(dwidata - Scsf, f)
-            St = np.multiply(St.T, maxdwi.T).T
-            St[np.isnan(St)] = 0
-            St[St < 0] = 0
+            St = self._remove_fw_component(dwidata, maxdwi, f, bvals)
             # Save tissue volume fraction and corrected dwi
             f = np.reshape(f, dims[0:3])
             St = np.reshape(St, dims)
@@ -138,8 +128,56 @@ class Dry:
             nb.save(niif, os.path.join(output_folder,
                                        "tissue_volume_fraction.nii.gz"))
             niiS = nb.Nifti1Image(St, dwinii.affine)
-            nb.save(niiS, os.path.join(output_folder,
-                                       "fwe_dwi.nii.gz"))
+            nb.save(niiS, os.path.join(output_folder, "fwe_dwi.nii.gz"))
 
         for dwi in dwis:
             _process_dwi(model, dwi, bvals, output_folder)
+
+    def fwe_tissue(self, dwi, tissue_volume_fraction, bfile,
+                   output_folder=None):
+        """Given the DWI volumes and the tissue volume fraction extracts the
+        free water component from the diffusion data and saves it. This option
+        might be useful when the tisseu volume fraction has been computed with
+        only a part of the b-values (<1500 s/mm^2), but the all the diffusion
+        volumes need to be corrected. Contrary to fwe method it only accepts
+        one dwi file and its corresponding tissue volume fraction at a time."""
+        if not output_folder:
+            output_folder = "."
+        if not dwi:
+            raise ValueError("Diffusion data is necessary.")
+        if not tissue_volume_fraction:
+            raise ValueError("Tissue volume fraction data is necessary.")
+        bvals = np.loadtxt(bfile)
+
+        dwidata, maxdwi, dims, dwinii = self._prepare_dwi_data(dwi)
+        f = nb.load(tissue_volume_fraction).get_data()
+        f = np.reshape(f, (np.prod(dims[0:3]), 1))
+        St = self._remove_fw_component(dwidata, maxdwi, f, bvals)
+        St = np.reshape(St, dims)
+        niiS = nb.Nifti1Image(St, dwinii.affine)
+        dwiname = os.path.basename(dwi)
+        dwiname = dwiname.split('.')
+        output_folder = os.path.join(output_folder, dwiname[0])
+        os.makedirs(output_folder, exist_ok=True)
+        nb.save(niiS, os.path.join(output_folder, "fwe_dwi.nii.gz"))
+
+    def _prepare_dwi_data(self, dwi):
+        """Private method. Concatenates and normalizes dwi into a 2D matrix"""
+        dwinii = nb.load(dwi)
+        dwidata = dwinii.get_fdata()
+        dims = dwidata.shape
+        dwidata = np.reshape(dwidata, (np.prod(dims[0:3]), dims[3]))
+        maxdwi = np.amax(dwidata, axis=1)
+        dwidata = np.divide(dwidata.T, maxdwi.T).T
+        return dwidata, maxdwi, dims, dwinii
+
+    def _remove_fw_component(self, dwidata, maxdwi, f, bvals):
+        """Private method. Computes the free water signal from bvals and
+        substract it from the diffusion data"""
+        Scsf = np.exp(-3e-3*bvals)
+        Scsf = np.multiply(1-f, Scsf)
+        St = np.divide(dwidata - Scsf, f)
+        St = np.multiply(St.T, maxdwi.T).T
+        St[np.isnan(St)] = 0
+        St[St < 0] = 0
+        return St
