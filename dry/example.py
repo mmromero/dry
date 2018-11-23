@@ -7,11 +7,11 @@ if __name__ == "__main__":
            'dry/data/one-shell/test3.nii.gz']
     dann = Dry()
     model1s = dann.train_model(bfile)
-    dann.correct_fwe(dwi, model1s, bfile, output_folder='dry/data')
+    dann.fwe(dwi, model1s, bfile, output_folder='dry/data')
 
     bfile = 'dry/data/two-shell/merged.bval'
     dwi = ['dry/data/two-shell/merged1.nii.gz',
            'dry/data/two-shell/merged2.nii.gz']
     dann = Dry()
     model2s = dann.train_model(bfile)
-    dann.correct_fwe(dwi, model2s, bfile, output_folder='dry/data')
+    dann.fwe(dwi, model2s, bfile, output_folder='dry/data')
